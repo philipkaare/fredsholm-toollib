@@ -1,0 +1,102 @@
+@page "/admin/brugere"
+@using Microsoft.AspNetCore.Authorization
+@using ToolLib.Models
+@using ToolLib.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject UserService UserService
+@inject DialogService DialogService
+
+<PageTitle>Brugerstyring - Værktøjsbibliotek</PageTitle>
+
+<div class="container mt-4">
+    <RadzenStack Gap="1rem">
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+            <h2>Brugerstyring</h2>
+            <RadzenButton Text="Opret bruger" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="ShowCreateDialog" />
+        </RadzenStack>
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <RadzenAlert AlertStyle="@statusStyle">@statusMessage</RadzenAlert>
+        }
+
+        @if (users == null)
+        {
+            <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+        }
+        else
+        {
+            <RadzenDataGrid Data="users" TItem="UserWithRoles" AllowSorting="true" PageSize="20" AllowPaging="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="UserWithRoles" Property="User.Email" Title="E-mail" />
+                    <RadzenDataGridColumn TItem="UserWithRoles" Title="Roller" Sortable="false">
+                        <Template Context="item">
+                            @string.Join(", ", item.Roles)
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="UserWithRoles" Title="Handlinger" Sortable="false">
+                        <Template Context="item">
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click='() => DeleteUser(item.User.Id)' />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        }
+    </RadzenStack>
+</div>
+
+@code {
+    private List<UserWithRoles>? users;
+    private string statusMessage = string.Empty;
+    private AlertStyle statusStyle = AlertStyle.Success;
+
+    protected override async Task OnInitializedAsync() => await LoadUsers();
+
+    private async Task LoadUsers()
+    {
+        var allUsers = await UserService.GetAllUsersAsync();
+        users = new List<UserWithRoles>();
+        foreach (var u in allUsers)
+        {
+            var roles = await UserService.GetUserRolesAsync(u);
+            users.Add(new UserWithRoles { User = u, Roles = roles.ToList() });
+        }
+    }
+
+    private async Task ShowCreateDialog()
+    {
+        var result = await DialogService.OpenAsync<CreateUserDialog>("Opret bruger");
+        if (result is true)
+        {
+            await LoadUsers();
+            statusStyle = AlertStyle.Success;
+            statusMessage = "Bruger oprettet!";
+        }
+    }
+
+    private async Task DeleteUser(string userId)
+    {
+        var confirmed = await DialogService.Confirm("Er du sikker på, at du vil slette denne bruger?", "Slet bruger");
+        if (confirmed == true)
+        {
+            var success = await UserService.DeleteUserAsync(userId);
+            if (success)
+            {
+                statusStyle = AlertStyle.Success;
+                statusMessage = "Bruger slettet.";
+                await LoadUsers();
+            }
+            else
+            {
+                statusStyle = AlertStyle.Danger;
+                statusMessage = "Fejl ved sletning af bruger.";
+            }
+        }
+    }
+
+    public class UserWithRoles
+    {
+        public ApplicationUser User { get; set; } = null!;
+        public List<string> Roles { get; set; } = new();
+    }
+}

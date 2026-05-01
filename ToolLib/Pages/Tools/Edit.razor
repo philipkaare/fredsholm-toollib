@@ -1,0 +1,108 @@
+@page "/vaerktoejer/{Id:int}/rediger"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ToolLib.Models
+@using ToolLib.Services
+@attribute [Authorize]
+@inject ToolService ToolService
+@inject MongoImageService ImageService
+@inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Rediger Værktøj - Værktøjsbibliotek</PageTitle>
+
+@if (tool == null)
+{
+    <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <div class="container mt-4">
+        <RadzenCard>
+            <h3>Rediger Værktøj</h3>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <RadzenAlert AlertStyle="AlertStyle.Danger" class="mb-3">@errorMessage</RadzenAlert>
+            }
+            <RadzenStack Gap="1rem">
+                <RadzenFormField Text="Titel">
+                    <RadzenTextBox @bind-Value="tool.Title" Style="width:100%" />
+                </RadzenFormField>
+                <RadzenFormField Text="Beskrivelse">
+                    <RadzenTextArea @bind-Value="tool.Description" Rows="4" Style="width:100%" />
+                </RadzenFormField>
+                @if (currentImageData != null)
+                {
+                    <div>
+                        <p><strong>Nuværende billede:</strong></p>
+                        <img src="data:image/jpeg;base64,@Convert.ToBase64String(currentImageData)" style="max-width:200px;border-radius:8px;" />
+                    </div>
+                }
+                <RadzenFormField Text="Nyt billede (valgfrit)">
+                    <InputFile OnChange="HandleFileChange" accept="image/*" />
+                </RadzenFormField>
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenButton Text="Gem ændringer" ButtonStyle="ButtonStyle.Primary" Click="HandleUpdate" />
+                    <RadzenButton Text="Annuller" ButtonStyle="ButtonStyle.Secondary" Click='() => NavigationManager.NavigateTo($"/vaerktoejer/{Id}")' />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Tool? tool;
+    private byte[]? currentImageData;
+    private IBrowserFile? newImageFile;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        tool = await ToolService.GetToolByIdAsync(Id);
+        if (tool == null)
+        {
+            NavigationManager.NavigateTo("/vaerktoejer");
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var currentUser = await UserManager.GetUserAsync(authState.User);
+        if (currentUser == null || (tool.OwnerId != currentUser.Id && !authState.User.IsInRole("Admin")))
+        {
+            NavigationManager.NavigateTo("/vaerktoejer");
+            return;
+        }
+
+        if (tool.ImageId != null)
+            currentImageData = await ImageService.GetImageAsync(tool.ImageId);
+    }
+
+    private void HandleFileChange(InputFileChangeEventArgs e)
+    {
+        newImageFile = e.File;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (tool == null) return;
+        if (string.IsNullOrWhiteSpace(tool.Title))
+        {
+            errorMessage = "Titel er påkrævet.";
+            return;
+        }
+
+        if (newImageFile != null)
+        {
+            if (tool.ImageId != null)
+                await ImageService.DeleteImageAsync(tool.ImageId);
+            
+            using var stream = newImageFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            tool.ImageId = await ImageService.UploadImageAsync(stream, newImageFile.Name);
+        }
+
+        await ToolService.UpdateToolAsync(tool);
+        NavigationManager.NavigateTo($"/vaerktoejer/{Id}");
+    }
+}

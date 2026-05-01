@@ -1,0 +1,50 @@
+@inject NavigationManager NavigationManager
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Værktøjsbibliotek</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="vaerktoejer" Match="NavLinkMatch.Prefix">
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> Værktøjer
+                    </NavLink>
+                </div>
+                <AuthorizeView Roles="Admin" Context="adminContext">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="admin" Match="NavLinkMatch.Prefix">
+                            <span class="oi oi-cog" aria-hidden="true"></span> Administration
+                        </NavLink>
+                    </div>
+                </AuthorizeView>
+                <div class="nav-item px-3">
+                    <a class="nav-link" href="/auth/logout" @onclick:preventDefault @onclick="HandleLogout" style="cursor:pointer">
+                        <span class="oi oi-account-logout" aria-hidden="true"></span> Log ud
+                    </a>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="oi oi-account-login" aria-hidden="true"></span> Log ind
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+    private void HandleLogout() => NavigationManager.NavigateTo("/auth/logout", forceLoad: true);
+}

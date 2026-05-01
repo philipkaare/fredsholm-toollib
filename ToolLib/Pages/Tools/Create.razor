@@ -1,0 +1,81 @@
+@page "/vaerktoejer/opret"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ToolLib.Models
+@using ToolLib.Services
+@attribute [Authorize]
+@inject ToolService ToolService
+@inject MongoImageService ImageService
+@inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Opret Værktøj - Værktøjsbibliotek</PageTitle>
+
+<div class="container mt-4">
+    <RadzenCard>
+        <h3>Opret nyt Værktøj</h3>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Danger" class="mb-3">@errorMessage</RadzenAlert>
+        }
+        <RadzenStack Gap="1rem">
+            <RadzenFormField Text="Titel">
+                <RadzenTextBox @bind-Value="title" Style="width:100%" />
+            </RadzenFormField>
+            <RadzenFormField Text="Beskrivelse">
+                <RadzenTextArea @bind-Value="description" Rows="4" Style="width:100%" />
+            </RadzenFormField>
+            <RadzenFormField Text="Billede (valgfrit)">
+                <InputFile OnChange="HandleFileChange" accept="image/*" />
+            </RadzenFormField>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                <RadzenButton Text="Gem" ButtonStyle="ButtonStyle.Primary" Click="HandleCreate" />
+                <RadzenButton Text="Annuller" ButtonStyle="ButtonStyle.Secondary" Click='() => NavigationManager.NavigateTo("/vaerktoejer")' />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>
+</div>
+
+@code {
+    private string title = string.Empty;
+    private string description = string.Empty;
+    private IBrowserFile? imageFile;
+    private string errorMessage = string.Empty;
+
+    private void HandleFileChange(InputFileChangeEventArgs e)
+    {
+        imageFile = e.File;
+    }
+
+    private async Task HandleCreate()
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            errorMessage = "Titel er påkrævet.";
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var currentUser = await UserManager.GetUserAsync(authState.User);
+        if (currentUser == null) return;
+
+        string? imageId = null;
+        if (imageFile != null)
+        {
+            using var stream = imageFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            imageId = await ImageService.UploadImageAsync(stream, imageFile.Name);
+        }
+
+        var tool = new Tool
+        {
+            Title = title,
+            Description = description,
+            OwnerId = currentUser.Id,
+            ImageId = imageId
+        };
+
+        await ToolService.CreateToolAsync(tool);
+        NavigationManager.NavigateTo("/vaerktoejer");
+    }
+}

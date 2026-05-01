@@ -1,0 +1,36 @@
+@page
+@model ToolLib.Pages._HostModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using ToolLib
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Værktøjsbibliotek</title>
+    <base href="~/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="ToolLib.styles.css" />
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/default.css">
+</head>
+<body>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            Der opstod en uventet fejl. Forsøg at <a href="">genindlæse</a> siden, eller kontakt support.
+        </environment>
+        <environment include="Development">
+            En ubehandlet undtagelse er opstået. Se browserens udviklerkonsol for detaljer.
+        </environment>
+        <a href="" class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>
