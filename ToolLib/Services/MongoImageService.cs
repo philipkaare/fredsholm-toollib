@@ -7,9 +7,11 @@ namespace ToolLib.Services;
 public class MongoImageService
 {
     private readonly IGridFSBucket _gridFs;
+    private readonly ILogger<MongoImageService> _logger;
 
-    public MongoImageService(IConfiguration configuration)
+    public MongoImageService(IConfiguration configuration, ILogger<MongoImageService> logger)
     {
+        _logger = logger;
         var connectionString = configuration["MongoDB:ConnectionString"] ?? "mongodb://localhost:27017";
         var databaseName = configuration["MongoDB:DatabaseName"] ?? "toollib";
         var client = new MongoClient(connectionString);
@@ -30,8 +32,9 @@ public class MongoImageService
             var objectId = new ObjectId(imageId);
             return await _gridFs.DownloadAsBytesAsync(objectId);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to retrieve image with id {ImageId}", imageId);
             return null;
         }
     }
@@ -43,6 +46,9 @@ public class MongoImageService
             var objectId = new ObjectId(imageId);
             await _gridFs.DeleteAsync(objectId);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete image with id {ImageId}", imageId);
+        }
     }
 }
