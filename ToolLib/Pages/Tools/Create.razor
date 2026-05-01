@@ -43,6 +43,8 @@
     private IBrowserFile? imageFile;
     private string errorMessage = string.Empty;
 
+    private const long MaxImageSize = 10 * 1024 * 1024;
+
     private void HandleFileChange(InputFileChangeEventArgs e)
     {
         imageFile = e.File;
@@ -63,7 +65,7 @@
         string? imageId = null;
         if (imageFile != null)
         {
-            using var stream = imageFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var stream = imageFile.OpenReadStream(maxAllowedSize: MaxImageSize);
             imageId = await ImageService.UploadImageAsync(stream, imageFile.Name);
         }
 

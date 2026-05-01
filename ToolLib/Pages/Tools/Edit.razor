@@ -58,6 +58,8 @@ else
     private IBrowserFile? newImageFile;
     private string errorMessage = string.Empty;
 
+    private const long MaxImageSize = 10 * 1024 * 1024;
+
     protected override async Task OnInitializedAsync()
     {
         tool = await ToolService.GetToolByIdAsync(Id);
@@ -98,7 +100,7 @@ else
             if (tool.ImageId != null)
                 await ImageService.DeleteImageAsync(tool.ImageId);
             
-            using var stream = newImageFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var stream = newImageFile.OpenReadStream(maxAllowedSize: MaxImageSize);
             tool.ImageId = await ImageService.UploadImageAsync(stream, newImageFile.Name);
         }
 
