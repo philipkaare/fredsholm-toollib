@@ -73,7 +73,8 @@ using (var scope = app.Services.CreateScope())
         }
         
         var adminEmail = builder.Configuration["AdminUser:Email"] ?? "admin@toollib.dk";
-        var adminPassword = builder.Configuration["AdminUser:Password"] ?? "Admin123!";
+        var adminPassword = builder.Configuration["AdminUser:Password"]
+            ?? throw new InvalidOperationException("AdminUser:Password must be set via configuration or environment variable.");
         
         if (await userManager.FindByEmailAsync(adminEmail) == null)
         {

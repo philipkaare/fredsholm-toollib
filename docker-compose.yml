@@ -9,7 +9,7 @@ services:
       - MongoDB__ConnectionString=mongodb://mongo:27017
       - MongoDB__DatabaseName=toollib
       - AdminUser__Email=admin@toollib.dk
-      - AdminUser__Password=Admin123!
+      - AdminUser__Password=${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
       - ASPNETCORE_ENVIRONMENT=Production
     depends_on:
       postgres:
