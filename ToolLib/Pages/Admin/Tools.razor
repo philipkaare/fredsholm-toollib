@@ -1,0 +1,65 @@
+@page "/admin/vaerktoejer"
+@using Microsoft.AspNetCore.Authorization
+@using ToolLib.Models
+@using ToolLib.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject ToolService ToolService
+@inject MongoImageService ImageService
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+
+<PageTitle>Værktøjsstyring - Værktøjsbibliotek</PageTitle>
+
+<div class="container mt-4">
+    <RadzenStack Gap="1rem">
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+            <h2>Alle Værktøjer (Admin)</h2>
+            <RadzenButton Text="Tilføj Værktøj" Icon="add" ButtonStyle="ButtonStyle.Primary" Click='() => NavigationManager.NavigateTo("/vaerktoejer/opret")' />
+        </RadzenStack>
+
+        @if (tools == null)
+        {
+            <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+        }
+        else
+        {
+            <RadzenDataGrid Data="tools" TItem="Tool" AllowSorting="true" AllowFiltering="true" PageSize="20" AllowPaging="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="Tool" Property="Title" Title="Titel" />
+                    <RadzenDataGridColumn TItem="Tool" Property="Owner.Email" Title="Ejer" />
+                    <RadzenDataGridColumn TItem="Tool" Property="CreatedAt" Title="Oprettet" FormatString="{0:dd-MM-yyyy}" />
+                    <RadzenDataGridColumn TItem="Tool" Title="Handlinger" Sortable="false" Filterable="false">
+                        <Template Context="tool">
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.25rem">
+                                <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click='() => NavigationManager.NavigateTo($"/vaerktoejer/{tool.Id}")' />
+                                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Click='() => NavigationManager.NavigateTo($"/vaerktoejer/{tool.Id}/rediger")' />
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click='() => DeleteTool(tool)' />
+                            </RadzenStack>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        }
+    </RadzenStack>
+</div>
+
+@code {
+    private List<Tool>? tools;
+
+    protected override async Task OnInitializedAsync()
+    {
+        tools = await ToolService.GetAllToolsAsync();
+    }
+
+    private async Task DeleteTool(Tool tool)
+    {
+        var confirmed = await DialogService.Confirm($"Er du sikker på, at du vil slette '{tool.Title}'?", "Slet værktøj");
+        if (confirmed == true)
+        {
+            if (tool.ImageId != null)
+                await ImageService.DeleteImageAsync(tool.ImageId);
+            await ToolService.DeleteToolAsync(tool.Id);
+            tools = await ToolService.GetAllToolsAsync();
+        }
+    }
+}

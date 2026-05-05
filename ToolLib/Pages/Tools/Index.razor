@@ -1,0 +1,49 @@
+@page "/vaerktoejer"
+@using Microsoft.AspNetCore.Authorization
+@using ToolLib.Models
+@using ToolLib.Services
+@attribute [Authorize]
+@inject ToolService ToolService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Værktøjer - Værktøjsbibliotek</PageTitle>
+
+<RadzenStack Gap="1rem" class="p-3">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+        <h2>Alle Værktøjer</h2>
+        <RadzenButton Text="Tilføj Værktøj" Icon="add" ButtonStyle="ButtonStyle.Primary" Click='() => NavigationManager.NavigateTo("/vaerktoejer/opret")' />
+    </RadzenStack>
+
+    @if (tools == null)
+    {
+        <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (tools.Count == 0)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Info">Ingen værktøjer fundet. Tilføj det første!</RadzenAlert>
+    }
+    else
+    {
+        <RadzenDataGrid Data="tools" TItem="Tool" AllowSorting="true" AllowFiltering="true" PageSize="20" AllowPaging="true">
+            <Columns>
+                <RadzenDataGridColumn TItem="Tool" Property="Title" Title="Titel" />
+                <RadzenDataGridColumn TItem="Tool" Property="Owner.Email" Title="Ejer" />
+                <RadzenDataGridColumn TItem="Tool" Property="CreatedAt" Title="Oprettet" FormatString="{0:dd-MM-yyyy}" />
+                <RadzenDataGridColumn TItem="Tool" Title="Handlinger" Sortable="false" Filterable="false">
+                    <Template Context="tool">
+                        <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click='() => NavigationManager.NavigateTo($"/vaerktoejer/{tool.Id}")' />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenStack>
+
+@code {
+    private List<Tool>? tools;
+
+    protected override async Task OnInitializedAsync()
+    {
+        tools = await ToolService.GetAllToolsAsync();
+    }
+}

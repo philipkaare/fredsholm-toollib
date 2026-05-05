@@ -1,0 +1,30 @@
+@page "/admin"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+@inject NavigationManager NavigationManager
+
+<PageTitle>Admin - Værktøjsbibliotek</PageTitle>
+
+<div class="container mt-4">
+    <h2>Administration</h2>
+    <div class="row mt-3">
+        <div class="col-md-4">
+            <RadzenCard class="mb-3" style="cursor:pointer" @onclick='() => NavigationManager.NavigateTo("/admin/brugere")'>
+                <RadzenStack Gap="0.5rem" AlignItems="AlignItems.Center">
+                    <RadzenIcon Icon="people" Style="font-size:3rem;color:var(--rz-primary)" />
+                    <RadzenText TextStyle="TextStyle.H5">Brugerstyring</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2">Opret og slet brugere</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </div>
+        <div class="col-md-4">
+            <RadzenCard class="mb-3" style="cursor:pointer" @onclick='() => NavigationManager.NavigateTo("/admin/vaerktoejer")'>
+                <RadzenStack Gap="0.5rem" AlignItems="AlignItems.Center">
+                    <RadzenIcon Icon="build" Style="font-size:3rem;color:var(--rz-primary)" />
+                    <RadzenText TextStyle="TextStyle.H5">Værktøjsstyring</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2">Administrer alle værktøjer</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </div>
+    </div>
+</div>

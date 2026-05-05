@@ -1,0 +1,87 @@
+@page "/vaerktoejer/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ToolLib.Models
+@using ToolLib.Services
+@attribute [Authorize]
+@inject ToolService ToolService
+@inject MongoImageService ImageService
+@inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject DialogService DialogService
+
+<PageTitle>@(tool?.Title ?? "Værktøj") - Værktøjsbibliotek</PageTitle>
+
+@if (tool == null)
+{
+    <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <div class="container mt-4">
+        <RadzenCard>
+            <RadzenStack Gap="1rem">
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                    <h2>@tool.Title</h2>
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                        @if (canEdit)
+                        {
+                            <RadzenButton Text="Rediger" Icon="edit" ButtonStyle="ButtonStyle.Warning" Click='() => NavigationManager.NavigateTo($"/vaerktoejer/{tool.Id}/rediger")' />
+                            <RadzenButton Text="Slet" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="ConfirmDelete" />
+                        }
+                        <RadzenButton Text="Tilbage" Icon="arrow_back" ButtonStyle="ButtonStyle.Secondary" Click='() => NavigationManager.NavigateTo("/vaerktoejer")' />
+                    </RadzenStack>
+                </RadzenStack>
+                
+                @if (imageData != null)
+                {
+                    <img src="data:image/jpeg;base64,@Convert.ToBase64String(imageData)" style="max-width:400px;border-radius:8px;" alt="@tool.Title" />
+                }
+                
+                <RadzenText TextStyle="TextStyle.Body1"><strong>Ejer:</strong> @tool.Owner?.Email</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1"><strong>Oprettet:</strong> @tool.CreatedAt.ToString("dd-MM-yyyy")</RadzenText>
+                <RadzenText TextStyle="TextStyle.H6">Beskrivelse</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">@tool.Description</RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Tool? tool;
+    private byte[]? imageData;
+    private bool canEdit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        tool = await ToolService.GetToolByIdAsync(Id);
+        if (tool == null)
+        {
+            NavigationManager.NavigateTo("/vaerktoejer");
+            return;
+        }
+
+        if (tool.ImageId != null)
+            imageData = await ImageService.GetImageAsync(tool.ImageId);
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var currentUser = await UserManager.GetUserAsync(user);
+        canEdit = currentUser != null && (tool.OwnerId == currentUser.Id || user.IsInRole("Admin"));
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (tool == null) return;
+        var confirmed = await DialogService.Confirm($"Er du sikker på, at du vil slette '{tool.Title}'?", "Slet værktøj");
+        if (confirmed == true)
+        {
+            if (tool.ImageId != null)
+                await ImageService.DeleteImageAsync(tool.ImageId);
+            await ToolService.DeleteToolAsync(tool.Id);
+            NavigationManager.NavigateTo("/vaerktoejer");
+        }
+    }
+}

@@ -1,0 +1,60 @@
+@page "/login"
+@using Microsoft.AspNetCore.Identity
+@using ToolLib.Models
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager NavigationManager
+@inject IHttpContextAccessor HttpContextAccessor
+
+<PageTitle>Log ind - Værktøjsbibliotek</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <RadzenCard>
+                <h3 class="text-center mb-4">Log ind</h3>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Danger" class="mb-3">@errorMessage</RadzenAlert>
+                }
+                <RadzenStack Gap="1rem">
+                    <RadzenFormField Text="E-mail">
+                        <RadzenTextBox @bind-Value="email" Placeholder="din@email.dk" Style="width:100%" />
+                    </RadzenFormField>
+                    <RadzenFormField Text="Adgangskode">
+                        <RadzenPassword @bind-Value="password" Placeholder="Adgangskode" Style="width:100%" />
+                    </RadzenFormField>
+                    <RadzenButton Text="Log ind" ButtonStyle="ButtonStyle.Primary" Style="width:100%" Click="HandleLogin" />
+                </RadzenStack>
+            </RadzenCard>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string errorMessage = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext?.User?.Identity?.IsAuthenticated == true)
+        {
+            NavigationManager.NavigateTo("/vaerktoejer", forceLoad: true);
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = string.Empty;
+        var result = await SignInManager.PasswordSignInAsync(email, password, isPersistent: true, lockoutOnFailure: false);
+        if (result.Succeeded)
+        {
+            NavigationManager.NavigateTo("/vaerktoejer", forceLoad: true);
+        }
+        else
+        {
+            errorMessage = "Forkert e-mail eller adgangskode.";
+        }
+    }
+}

@@ -1,0 +1,45 @@
+@using ToolLib.Services
+@inject UserService UserService
+@inject DialogService DialogService
+
+<RadzenStack Gap="1rem" Style="padding:1rem">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger">@errorMessage</RadzenAlert>
+    }
+    <RadzenFormField Text="E-mail">
+        <RadzenTextBox @bind-Value="email" Style="width:100%" />
+    </RadzenFormField>
+    <RadzenFormField Text="Adgangskode">
+        <RadzenPassword @bind-Value="password" Style="width:100%" />
+    </RadzenFormField>
+    <RadzenFormField Text="Rolle">
+        <RadzenDropDown @bind-Value="role" Data="roles" Style="width:100%" />
+    </RadzenFormField>
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+        <RadzenButton Text="Opret" ButtonStyle="ButtonStyle.Primary" Click="HandleCreate" />
+        <RadzenButton Text="Annuller" ButtonStyle="ButtonStyle.Secondary" Click='() => DialogService.Close(false)' />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string role = "User";
+    private string errorMessage = string.Empty;
+    private List<string> roles = new() { "User", "Admin" };
+
+    private async Task HandleCreate()
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "E-mail og adgangskode er påkrævet.";
+            return;
+        }
+        var (success, error) = await UserService.CreateUserAsync(email, password, role);
+        if (success)
+            DialogService.Close(true);
+        else
+            errorMessage = error;
+    }
+}
