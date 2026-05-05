@@ -82,9 +82,17 @@ using (var scope = app.Services.CreateScope())
             var admin = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
             var result = await userManager.CreateAsync(admin, adminPassword);
             if (result.Succeeded)
-                await userManager.AddToRoleAsync(admin, "Admin");
+            {
+                var createdAdmin = await userManager.FindByIdAsync(admin.Id);
+                if (createdAdmin != null)
+                    await userManager.AddToRoleAsync(createdAdmin, "Admin");
+                else
+                    logger.LogError("Admin user was created but could not be retrieved for role assignment.");
+            }
             else
+            {
                 logger.LogError("Failed to create admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
         }
     }
     catch (Exception ex)
