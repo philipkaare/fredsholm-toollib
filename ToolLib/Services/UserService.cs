@@ -30,7 +30,11 @@ public class UserService
         if (!await _roleManager.RoleExistsAsync(role))
             await _roleManager.CreateAsync(new IdentityRole(role));
 
-        await _userManager.AddToRoleAsync(user, role);
+        var createdUser = await _userManager.FindByIdAsync(user.Id);
+        if (createdUser == null)
+            return (false, "User was created but could not be retrieved for role assignment.");
+
+        await _userManager.AddToRoleAsync(createdUser, role);
         return (true, string.Empty);
     }
 
