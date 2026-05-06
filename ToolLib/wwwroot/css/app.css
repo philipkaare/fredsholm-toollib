@@ -7,16 +7,25 @@ h1:focus {
 }
 
 a, .btn-link {
-    color: #0071c1;
+    color: #3B6B4A;
 }
 
 .btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #4A7C5B;
+    --bs-btn-border-color: #3B6B4A;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #3B6B4A;
+    --bs-btn-hover-border-color: #2D5239;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #2D5239;
+    --bs-btn-active-border-color: #2D5239;
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: #4A7C5B;
+    border-color: #3B6B4A;
 }
 
-.nav-item a.active {
+.nav-item a[aria-current="page"] {
     background-color: rgba(255,255,255,0.1);
 }
 
@@ -67,12 +76,21 @@ a, .btn-link {
     flex-direction: column;
 }
 
-.main {
-    flex: 1;
+main {
+    flex: 1 1 0%;
+    min-width: 0;
+    width: 0;        /* combined with flex-grow: fills remaining space without overflow */
+    max-width: 100%;
+}
+
+.content {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    background-image: linear-gradient(180deg, #1A2E23 0%, #2D4A3A 70%);
 }
 
 .sidebar .top-row {
@@ -81,12 +99,17 @@ a, .btn-link {
 }
 
 .top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
+    background-color: #3D5A47;
+    border-bottom: 1px solid #2D4A3A;
     justify-content: flex-end;
     height: 3.5rem;
     display: flex;
     align-items: center;
+    color: #E8EDE5;
+}
+
+.top-row a, .top-row .btn-link {
+    color: #C5D5B5;
 }
 
 .top-row ::deep a, .top-row .btn-link {
@@ -127,8 +150,8 @@ a, .btn-link {
         z-index: 1;
     }
 
-    .main > div {
+    .content {
         padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
+        padding-right: 2rem !important;
     }
 }

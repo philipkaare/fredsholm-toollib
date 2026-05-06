@@ -5,6 +5,31 @@ using ToolLib.Data;
 using ToolLib.Models;
 using ToolLib.Services;
 
+// Load .env file for local development (Docker Compose injects these as real env vars)
+{
+    var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+    while (dir != null)
+    {
+        var candidate = Path.Combine(dir.FullName, ".env");
+        if (File.Exists(candidate))
+        {
+            foreach (var line in File.ReadAllLines(candidate))
+            {
+                var trimmed = line.Trim();
+                if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#')) continue;
+                var sep = trimmed.IndexOf('=');
+                if (sep <= 0) continue;
+                var key = trimmed[..sep].Trim();
+                var value = trimmed[(sep + 1)..].Trim();
+                if (Environment.GetEnvironmentVariable(key) == null)
+                    Environment.SetEnvironmentVariable(key, value);
+            }
+            break;
+        }
+        dir = dir.Parent;
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -34,6 +59,8 @@ builder.Services.AddRadzenComponents();
 builder.Services.AddScoped<MongoImageService>();
 builder.Services.AddScoped<ToolService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<UserRequestService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllersWithViews();
 
@@ -74,8 +101,19 @@ using (var scope = app.Services.CreateScope())
         }
         
         var adminEmail = builder.Configuration["AdminUser:Email"] ?? "admin@toollib.dk";
-        var adminPassword = builder.Configuration["AdminUser:Password"]
-            ?? throw new InvalidOperationException("AdminUser:Password must be set via configuration or environment variable.");
+        var passwordFromConfig = builder.Configuration["AdminUser:Password"];
+        var passwordFromEnv = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+        var adminPassword = passwordFromConfig ?? passwordFromEnv;
+
+        logger.LogInformation("Admin password source: {Source}, length: {Length}, hasUpper: {HasUpper}, hasDigit: {HasDigit}, hasSpecial: {HasSpecial}",
+            passwordFromConfig != null ? "AdminUser:Password (config)" : (passwordFromEnv != null ? "ADMIN_PASSWORD (env)" : "none"),
+            adminPassword?.Length ?? 0,
+            adminPassword?.Any(char.IsUpper) ?? false,
+            adminPassword?.Any(char.IsDigit) ?? false,
+            adminPassword?.Any(c => !char.IsLetterOrDigit(c)) ?? false);
+
+        if (string.IsNullOrEmpty(adminPassword))
+            throw new InvalidOperationException("ADMIN_PASSWORD must be set in .env or as an environment variable.");
         
         if (await userManager.FindByEmailAsync(adminEmail) == null)
         {

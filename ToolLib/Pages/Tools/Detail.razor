@@ -1,8 +1,6 @@
 @page "/vaerktoejer/{Id:int}"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
-@using ToolLib.Models
-@using ToolLib.Services
 @attribute [Authorize]
 @inject ToolService ToolService
 @inject MongoImageService ImageService
@@ -19,7 +17,9 @@
 }
 else
 {
-    <div class="container mt-4">
+    <div class="mt-4">
+    <div class="row">
+    <div class="col-12 col-xl-9">
         <RadzenCard>
             <RadzenStack Gap="1rem">
                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
@@ -33,18 +33,35 @@ else
                         <RadzenButton Text="Tilbage" Icon="arrow_back" ButtonStyle="ButtonStyle.Secondary" Click='() => NavigationManager.NavigateTo("/vaerktoejer")' />
                     </RadzenStack>
                 </RadzenStack>
-                
+
                 @if (imageData != null)
                 {
                     <img src="data:image/jpeg;base64,@Convert.ToBase64String(imageData)" style="max-width:400px;border-radius:8px;" alt="@tool.Title" />
                 }
-                
-                <RadzenText TextStyle="TextStyle.Body1"><strong>Ejer:</strong> @tool.Owner?.Email</RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1"><strong>Oprettet:</strong> @tool.CreatedAt.ToString("dd-MM-yyyy")</RadzenText>
+
                 <RadzenText TextStyle="TextStyle.H6">Beskrivelse</RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1">@tool.Description</RadzenText>
+
+                <hr style="margin: 0.25rem 0" />
+
+                <RadzenText TextStyle="TextStyle.H6">Ejer</RadzenText>
+                <RadzenStack Gap="0.25rem">
+                    @if (!string.IsNullOrEmpty(tool.Owner?.FullName))
+                    {
+                        <RadzenText TextStyle="TextStyle.Body1"><strong>Navn:</strong> @tool.Owner.FullName</RadzenText>
+                    }
+                    @if (!string.IsNullOrEmpty(tool.Owner?.Address))
+                    {
+                        <RadzenText TextStyle="TextStyle.Body1"><strong>Adresse:</strong> @tool.Owner.Address</RadzenText>
+                    }
+                    <RadzenText TextStyle="TextStyle.Body1"><strong>E-mail:</strong> @tool.Owner?.Email</RadzenText>
+                </RadzenStack>
+
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color)">Oprettet @tool.CreatedAt.ToString("dd-MM-yyyy")</RadzenText>
             </RadzenStack>
         </RadzenCard>
+    </div>
+    </div>
     </div>
 }
 

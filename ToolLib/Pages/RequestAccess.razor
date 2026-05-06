@@ -1,0 +1,95 @@
+@page "/anmod-om-adgang"
+@inject UserRequestService UserRequestService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Anmod om adgang - Fredsholmvej Værktøjsbibliotek</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <RadzenCard>
+                <h3 class="text-center mb-4">Anmod om adgang</h3>
+                <p class="text-center text-muted mb-4">Er du nabo på Fredsholmvej? Udfyld formularen og en administrator godkender din anmodning.</p>
+
+                @if (submitted)
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Success">
+                        Din anmodning er modtaget! Du vil få besked på e-mail, når din adgang er behandlet.
+                    </RadzenAlert>
+                    <div class="text-center mt-3">
+                        <a href="/login" class="btn btn-outline-secondary">Tilbage til log ind</a>
+                    </div>
+                }
+                else
+                {
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <RadzenAlert AlertStyle="AlertStyle.Danger" class="mb-3">@errorMessage</RadzenAlert>
+                    }
+                    <RadzenStack Gap="1rem">
+                        <RadzenFormField Text="Navn">
+                            <RadzenTextBox @bind-Value="name" Placeholder="Dit fulde navn" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenFormField Text="E-mail">
+                            <RadzenTextBox @bind-Value="email" Placeholder="din@email.dk" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenFormField Text="Besked (valgfri)">
+                            <RadzenTextArea @bind-Value="message" Placeholder="Fx hvad din adresse er på Fredsholmvej..." Rows="3" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenButton Text="Send anmodning" ButtonStyle="ButtonStyle.Primary" Style="width:100%"
+                            Click="HandleSubmit" IsBusy="isBusy" />
+                    </RadzenStack>
+                    <div class="text-center mt-3">
+                        <a href="/login">Har du allerede en konto? Log ind</a>
+                    </div>
+                }
+            </RadzenCard>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string name = string.Empty;
+    private string email = string.Empty;
+    private string message = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isBusy;
+    private bool submitted;
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            errorMessage = "Angiv venligst dit navn.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+        {
+            errorMessage = "Angiv venligst en gyldig e-mailadresse.";
+            return;
+        }
+
+        isBusy = true;
+        try
+        {
+            var request = new ToolLib.Models.UserRequest
+            {
+                Name = name.Trim(),
+                Email = email.Trim().ToLower(),
+                Message = string.IsNullOrWhiteSpace(message) ? null : message.Trim()
+            };
+
+            var ok = await UserRequestService.CreateAsync(request);
+            if (ok)
+                submitted = true;
+            else
+                errorMessage = "Der er allerede en anmodning for denne e-mailadresse, eller e-mailen er allerede i brug.";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}

@@ -17,6 +17,22 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="ToolLib.styles.css" />
     <link rel="stylesheet" href="_content/Radzen.Blazor/css/default.css">
+    <style>
+        :root {
+            --rz-primary: #4A7C5B;
+            --rz-primary-500: #4A7C5B;
+            --rz-primary-600: #3B6B4A;
+            --rz-primary-700: #2D5239;
+            --rz-primary-400: #6B9E7A;
+            --rz-primary-300: #8EBB9A;
+            --rz-primary-200: #B5D4BC;
+            --rz-primary-100: #D8EBD9;
+            --rz-on-primary-500: #ffffff;
+            --rz-on-primary: #ffffff;
+            --rz-secondary: #5A7A65;
+            --rz-secondary-500: #5A7A65;
+        }
+    </style>
 </head>
 <body>
     <component type="typeof(App)" render-mode="ServerPrerendered" />
@@ -31,6 +47,23 @@
         <a href="" class="dismiss">🗙</a>
     </div>
 
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
     <script src="_framework/blazor.server.js"></script>
+    <script>
+        window.submitLoginForm = function (email, password) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/auth/login';
+            [['email', email], ['password', password]].forEach(([name, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value;
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        };
+    </script>
 </body>
 </html>

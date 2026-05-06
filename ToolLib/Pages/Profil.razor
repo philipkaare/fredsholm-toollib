@@ -1,0 +1,133 @@
+@page "/profil"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@attribute [Authorize]
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NotificationService NotificationService
+
+<PageTitle>Min profil - Værktøjsbibliotek</PageTitle>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <RadzenCard>
+                <h3 class="mb-4">Min profil</h3>
+
+                @if (currentUser == null)
+                {
+                    <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+                }
+                else
+                {
+                    <RadzenStack Gap="1rem">
+                        <RadzenFormField Text="E-mail">
+                            <RadzenTextBox Value="@currentUser.Email" Disabled="true" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenFormField Text="Navn">
+                            <RadzenTextBox @bind-Value="fullName" Placeholder="Dit fulde navn" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenFormField Text="Adresse på Fredsholmvej">
+                            <RadzenTextBox @bind-Value="address" Placeholder="Fx Fredsholmvej 12" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenButton Text="Gem" Icon="save" ButtonStyle="ButtonStyle.Primary"
+                            Click="Save" IsBusy="isBusy" />
+                    </RadzenStack>
+
+                    <hr class="mt-4" />
+                    <h5 class="mb-3">Skift adgangskode</h5>
+                    <RadzenStack Gap="1rem">
+                        <RadzenFormField Text="Nuværende adgangskode">
+                            <RadzenPassword @bind-Value="currentPassword" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenFormField Text="Ny adgangskode">
+                            <RadzenPassword @bind-Value="newPassword" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenFormField Text="Bekræft ny adgangskode">
+                            <RadzenPassword @bind-Value="confirmPassword" Style="width:100%" />
+                        </RadzenFormField>
+                        <RadzenButton Text="Skift adgangskode" Icon="lock" ButtonStyle="ButtonStyle.Secondary"
+                            Click="ChangePassword" IsBusy="isBusyPw" />
+                    </RadzenStack>
+                }
+            </RadzenCard>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ApplicationUser? currentUser;
+    private string fullName = string.Empty;
+    private string address = string.Empty;
+    private string currentPassword = string.Empty;
+    private string newPassword = string.Empty;
+    private string confirmPassword = string.Empty;
+    private bool isBusy;
+    private bool isBusyPw;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUser = await UserManager.GetUserAsync(authState.User);
+        if (currentUser != null)
+        {
+            fullName = currentUser.FullName ?? string.Empty;
+            address = currentUser.Address ?? string.Empty;
+        }
+    }
+
+    private async Task Save()
+    {
+        if (currentUser == null) return;
+        isBusy = true;
+        try
+        {
+            currentUser.FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim();
+            currentUser.Address = string.IsNullOrWhiteSpace(address) ? null : address.Trim();
+            await UserManager.UpdateAsync(currentUser);
+            NotificationService.Notify(NotificationSeverity.Success, "Gemt", "Din profil er opdateret.");
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        if (currentUser == null) return;
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Fejl", "Angiv en ny adgangskode.");
+            return;
+        }
+        if (newPassword != confirmPassword)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Fejl", "Adgangskoderne er ikke ens.");
+            return;
+        }
+        isBusyPw = true;
+        try
+        {
+            var result = await UserManager.ChangePasswordAsync(currentUser, currentPassword, newPassword);
+            if (result.Succeeded)
+            {
+                currentPassword = string.Empty;
+                newPassword = string.Empty;
+                confirmPassword = string.Empty;
+                NotificationService.Notify(NotificationSeverity.Success, "Gemt", "Din adgangskode er skiftet.");
+            }
+            else
+            {
+                var msg = result.Errors.Any(e => e.Code == "PasswordMismatch")
+                    ? "Den nuværende adgangskode er forkert."
+                    : string.Join(" ", result.Errors.Select(e => e.Description));
+                NotificationService.Notify(NotificationSeverity.Error, "Fejl", msg);
+            }
+        }
+        finally
+        {
+            isBusyPw = false;
+        }
+    }
+}

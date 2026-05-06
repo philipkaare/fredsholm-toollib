@@ -12,7 +12,9 @@
 
 <PageTitle>Opret Værktøj - Værktøjsbibliotek</PageTitle>
 
-<div class="container mt-4">
+<div class="mt-4">
+<div class="row">
+<div class="col-12 col-lg-9 col-xl-7">
     <RadzenCard>
         <h3>Opret nyt Værktøj</h3>
         @if (!string.IsNullOrEmpty(errorMessage))
@@ -35,6 +37,8 @@
             </RadzenStack>
         </RadzenStack>
     </RadzenCard>
+</div>
+</div>
 </div>
 
 @code {

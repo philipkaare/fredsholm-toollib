@@ -2,14 +2,15 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Roles = "Admin")]
 @inject NavigationManager NavigationManager
+@inject UserRequestService UserRequestService
 
 <PageTitle>Admin - Værktøjsbibliotek</PageTitle>
 
-<div class="container mt-4">
+<div class="p-3" style="width:100%">
     <h2>Administration</h2>
-    <div class="row mt-3">
-        <div class="col-md-4">
-            <RadzenCard class="mb-3" style="cursor:pointer" @onclick='() => NavigationManager.NavigateTo("/admin/brugere")'>
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <RadzenCard style="cursor:pointer;height:100%" @onclick='() => NavigationManager.NavigateTo("/admin/brugere")'>
                 <RadzenStack Gap="0.5rem" AlignItems="AlignItems.Center">
                     <RadzenIcon Icon="people" Style="font-size:3rem;color:var(--rz-primary)" />
                     <RadzenText TextStyle="TextStyle.H5">Brugerstyring</RadzenText>
@@ -17,14 +18,32 @@
                 </RadzenStack>
             </RadzenCard>
         </div>
-        <div class="col-md-4">
-            <RadzenCard class="mb-3" style="cursor:pointer" @onclick='() => NavigationManager.NavigateTo("/admin/vaerktoejer")'>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <RadzenCard style="cursor:pointer;height:100%;position:relative" @onclick='() => NavigationManager.NavigateTo("/admin/adgangsanmodninger")'>
                 <RadzenStack Gap="0.5rem" AlignItems="AlignItems.Center">
-                    <RadzenIcon Icon="build" Style="font-size:3rem;color:var(--rz-primary)" />
-                    <RadzenText TextStyle="TextStyle.H5">Værktøjsstyring</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body2">Administrer alle værktøjer</RadzenText>
+                    <div style="position:relative;display:inline-block">
+                        <RadzenIcon Icon="person_add" Style="font-size:3rem;color:var(--rz-primary)" />
+                        @if (pendingCount > 0)
+                        {
+                            <span class="badge bg-danger" style="position:absolute;top:-6px;right:-10px;font-size:0.75rem">@pendingCount</span>
+                        }
+                    </div>
+                    <RadzenText TextStyle="TextStyle.H5">Adgangsanmodninger</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2">
+                        @(pendingCount > 0 ? $"{pendingCount} ventende" : "Ingen ventende")
+                    </RadzenText>
                 </RadzenStack>
             </RadzenCard>
         </div>
     </div>
 </div>
+
+@code {
+    private int pendingCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { pendingCount = await UserRequestService.GetPendingCountAsync(); }
+        catch { /* ignore */ }
+    }
+}

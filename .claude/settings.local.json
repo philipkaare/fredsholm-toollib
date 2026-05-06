@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:bitzart.github.io)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api *)",
+      "Bash(Remove-Item *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(dir \"$env:USERPROFILE\\\\.nuget\\\\packages\\\\radzen.blazor\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\phili\\\\.nuget\\\\packages\\\\radzen.blazor\\\\10.0.6\" -Recurse | Select-Object Name, FullName | Where-Object { $_.Name -match \"\\\\.\\(dll|razor|css|js\\)$\" } | Select-Object -First 20)",
+      "PowerShell(Get-Content *)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet restore *)",
+      "Bash(dotnet package *)"
+    ]
+  }
+}

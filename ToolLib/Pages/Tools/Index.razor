@@ -1,49 +1,167 @@
 @page "/vaerktoejer"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @using ToolLib.Models
 @using ToolLib.Services
 @attribute [Authorize]
 @inject ToolService ToolService
+@inject MongoImageService ImageService
 @inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject DialogService DialogService
 
 <PageTitle>Værktøjer - Værktøjsbibliotek</PageTitle>
 
-<RadzenStack Gap="1rem" class="p-3">
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+<RadzenStack Gap="1rem" class="p-3" Style="width:100%">
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="width:100%">
         <h2>Alle Værktøjer</h2>
-        <RadzenButton Text="Tilføj Værktøj" Icon="add" ButtonStyle="ButtonStyle.Primary" Click='() => NavigationManager.NavigateTo("/vaerktoejer/opret")' />
+        <RadzenButton Text="Tilføj Værktøj" Icon="add" ButtonStyle="ButtonStyle.Primary"
+            Click='() => NavigationManager.NavigateTo("/vaerktoejer/opret")' />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center" Style="width:100%">
+        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Søg efter titel, beskrivelse eller ejer..."
+            Style="flex:1;min-width:0" />
+        <RadzenButton Icon="view_list" Size="ButtonSize.Medium" title="Listevisning"
+            ButtonStyle="@(!isCardView ? ButtonStyle.Primary : ButtonStyle.Light)"
+            Click='() => isCardView = false' />
+        <RadzenButton Icon="grid_view" Size="ButtonSize.Medium" title="Kortvisning"
+            ButtonStyle="@(isCardView ? ButtonStyle.Primary : ButtonStyle.Light)"
+            Click="SwitchToCardView" />
     </RadzenStack>
 
     @if (tools == null)
     {
         <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
     }
-    else if (tools.Count == 0)
+    else if (!FilteredTools.Any())
     {
-        <RadzenAlert AlertStyle="AlertStyle.Info">Ingen værktøjer fundet. Tilføj det første!</RadzenAlert>
+        <RadzenAlert AlertStyle="AlertStyle.Info">
+            @(tools.Count == 0 ? "Ingen værktøjer fundet. Tilføj det første!" : "Ingen værktøjer matcher søgningen.")
+        </RadzenAlert>
     }
-    else
+    else if (!isCardView)
     {
-        <RadzenDataGrid Data="tools" TItem="Tool" AllowSorting="true" AllowFiltering="true" PageSize="20" AllowPaging="true">
+        <RadzenDataGrid Data="@FilteredTools" TItem="Tool" AllowSorting="true" PageSize="20" AllowPaging="true" Style="width:100%">
             <Columns>
                 <RadzenDataGridColumn TItem="Tool" Property="Title" Title="Titel" />
                 <RadzenDataGridColumn TItem="Tool" Property="Owner.Email" Title="Ejer" />
                 <RadzenDataGridColumn TItem="Tool" Property="CreatedAt" Title="Oprettet" FormatString="{0:dd-MM-yyyy}" />
-                <RadzenDataGridColumn TItem="Tool" Title="Handlinger" Sortable="false" Filterable="false">
+                <RadzenDataGridColumn TItem="Tool" Title="Handlinger" Sortable="false" Width="140px">
                     <Template Context="tool">
-                        <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click='() => NavigationManager.NavigateTo($"/vaerktoejer/{tool.Id}")' />
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.25rem">
+                            <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small"
+                                Click='() => NavigationManager.NavigateTo($"/vaerktoejer/{tool.Id}")' />
+                            @if (isAdmin || tool.OwnerId == currentUserId)
+                            {
+                                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small"
+                                    Click='() => NavigationManager.NavigateTo($"/vaerktoejer/{tool.Id}/rediger")' />
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                    Click='() => DeleteTool(tool)' />
+                            }
+                        </RadzenStack>
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
     }
+    else
+    {
+        <div class="tool-grid">
+            @foreach (var tool in FilteredTools)
+            {
+                var imageStyle = GetCardImageStyle(tool);
+                <div class="tool-card" @onclick='() => NavigationManager.NavigateTo($"/vaerktoejer/{tool.Id}")'>
+                    <div class="tool-card-bg @(imageStyle == null ? "tool-card-placeholder" : "")"
+                         style="@imageStyle">
+                        @if (imageStyle == null)
+                        {
+                            <span class="tool-card-placeholder-icon">🔧</span>
+                        }
+                    </div>
+                    <div class="tool-card-overlay">
+                        <div class="tool-card-title">@tool.Title</div>
+                        <div class="tool-card-owner">@tool.Owner?.Email</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
 </RadzenStack>
 
 @code {
     private List<Tool>? tools;
+    private string? currentUserId;
+    private bool isAdmin;
+    private bool isCardView;
+    private string searchTerm = string.Empty;
+    private readonly Dictionary<string, string> imageCache = new();
+    private bool imagesLoadingStarted;
+
+    private IEnumerable<Tool> FilteredTools => tools?.Where(t =>
+        string.IsNullOrWhiteSpace(searchTerm) ||
+        t.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+        (t.Description?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (t.Owner?.Email?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)
+    ) ?? Enumerable.Empty<Tool>();
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var currentUser = await UserManager.GetUserAsync(authState.User);
+        currentUserId = currentUser?.Id;
+        isAdmin = authState.User.IsInRole("Admin");
         tools = await ToolService.GetAllToolsAsync();
+    }
+
+    private void SwitchToCardView()
+    {
+        isCardView = true;
+        if (!imagesLoadingStarted)
+        {
+            imagesLoadingStarted = true;
+            _ = LoadImagesAsync();
+        }
+    }
+
+    private async Task LoadImagesAsync()
+    {
+        if (tools == null) return;
+        foreach (var tool in tools.Where(t => t.ImageId != null))
+        {
+            if (imageCache.ContainsKey(tool.ImageId!)) continue;
+            try
+            {
+                var data = await ImageService.GetImageAsync(tool.ImageId!);
+                if (data != null)
+                {
+                    imageCache[tool.ImageId!] = Convert.ToBase64String(data);
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch { /* skip image on error */ }
+        }
+    }
+
+    private string? GetCardImageStyle(Tool tool)
+    {
+        if (tool.ImageId != null && imageCache.TryGetValue(tool.ImageId, out var b64))
+            return $"background-image:url('data:image/jpeg;base64,{b64}')";
+        return null;
+    }
+
+    private async Task DeleteTool(Tool tool)
+    {
+        var confirmed = await DialogService.Confirm($"Er du sikker på, at du vil slette '{tool.Title}'?", "Slet værktøj");
+        if (confirmed == true)
+        {
+            if (tool.ImageId != null)
+                await ImageService.DeleteImageAsync(tool.ImageId);
+            await ToolService.DeleteToolAsync(tool.Id);
+            tools = await ToolService.GetAllToolsAsync();
+        }
     }
 }

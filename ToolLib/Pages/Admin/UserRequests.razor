@@ -1,0 +1,94 @@
+@page "/admin/adgangsanmodninger"
+@using Microsoft.AspNetCore.Authorization
+@using ToolLib.Models
+@attribute [Authorize(Roles = "Admin")]
+@inject UserRequestService UserRequestService
+@inject NotificationService NotificationService
+
+<PageTitle>Adgangsanmodninger - Administraton</PageTitle>
+
+<RadzenStack Gap="1rem" class="p-3" Style="width:100%">
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="width:100%">
+        <h2>Adgangsanmodninger</h2>
+        <RadzenButton Icon="refresh" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+            Click="LoadRequests" Text="Opdater" />
+    </RadzenStack>
+
+    @if (requests == null)
+    {
+        <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (requests.Count == 0)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Info">Ingen ventende adgangsanmodninger.</RadzenAlert>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@requests" TItem="UserRequest" Style="width:100%">
+            <Columns>
+                <RadzenDataGridColumn TItem="UserRequest" Property="Name" Title="Navn" />
+                <RadzenDataGridColumn TItem="UserRequest" Property="Email" Title="E-mail" />
+                <RadzenDataGridColumn TItem="UserRequest" Property="Message" Title="Besked">
+                    <Template Context="r">
+                        <span>@(string.IsNullOrEmpty(r.Message) ? "—" : r.Message)</span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserRequest" Property="RequestedAt" Title="Anmodet" FormatString="{0:dd-MM-yyyy HH:mm}" Width="160px" />
+                <RadzenDataGridColumn TItem="UserRequest" Title="Handling" Sortable="false" Width="180px">
+                    <Template Context="r">
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.4rem">
+                            <RadzenButton Icon="check" Text="Godkend" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small"
+                                Click='() => Approve(r)' IsBusy="busyId == r.Id" />
+                            <RadzenButton Icon="close" Text="Afvis" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                Click='() => Reject(r)' IsBusy="busyId == r.Id" />
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+
+</RadzenStack>
+
+@code {
+    private List<UserRequest>? requests;
+    private int? busyId;
+
+    protected override async Task OnInitializedAsync() => await LoadRequests();
+
+    private async Task LoadRequests()
+    {
+        requests = await UserRequestService.GetPendingAsync();
+    }
+
+    private async Task Approve(UserRequest request)
+    {
+        busyId = request.Id;
+        try
+        {
+            await UserRequestService.ApproveAsync(request.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Godkendt", $"{request.Name} er nu oprettet som bruger og har modtaget en velkomstmail.");
+            await LoadRequests();
+        }
+        finally
+        {
+            busyId = null;
+        }
+    }
+
+    private async Task Reject(UserRequest request)
+    {
+        busyId = request.Id;
+        try
+        {
+            await UserRequestService.RejectAsync(request.Id);
+            NotificationService.Notify(NotificationSeverity.Info, "Afvist", $"Anmodning fra {request.Email} er afvist.");
+            await LoadRequests();
+        }
+        finally
+        {
+            busyId = null;
+        }
+    }
+}

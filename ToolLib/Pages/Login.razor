@@ -1,15 +1,15 @@
 @page "/login"
 @using Microsoft.AspNetCore.Identity
 @using ToolLib.Models
-@inject SignInManager<ApplicationUser> SignInManager
 @inject NavigationManager NavigationManager
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JS
 
 <PageTitle>Log ind - Værktøjsbibliotek</PageTitle>
 
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-4">
+        <div class="col-md-6 col-lg-5">
             <RadzenCard>
                 <h3 class="text-center mb-4">Log ind</h3>
                 @if (!string.IsNullOrEmpty(errorMessage))
@@ -23,8 +23,16 @@
                     <RadzenFormField Text="Adgangskode">
                         <RadzenPassword @bind-Value="password" Placeholder="Adgangskode" Style="width:100%" />
                     </RadzenFormField>
-                    <RadzenButton Text="Log ind" ButtonStyle="ButtonStyle.Primary" Style="width:100%" Click="HandleLogin" />
+                    <RadzenButton Text="Log ind" ButtonStyle="ButtonStyle.Primary" Style="width:100%" Click="HandleLogin" IsBusy="isBusy" />
                 </RadzenStack>
+                <div class="text-center mt-3">
+                    <a href="/glemt-adgangskode">Glemt adgangskode?</a>
+                </div>
+                <hr />
+                <div class="text-center">
+                    <span class="text-muted">Ikke nabo endnu?</span><br />
+                    <a href="/anmod-om-adgang">Anmod om adgang</a>
+                </div>
             </RadzenCard>
         </div>
     </div>
@@ -34,6 +42,7 @@
     private string email = string.Empty;
     private string password = string.Empty;
     private string errorMessage = string.Empty;
+    private bool isBusy = false;
 
     protected override void OnInitialized()
     {
@@ -41,20 +50,19 @@
         if (httpContext?.User?.Identity?.IsAuthenticated == true)
         {
             NavigationManager.NavigateTo("/vaerktoejer", forceLoad: true);
+            return;
         }
+
+        var uri = new Uri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        if (query["error"] == "1")
+            errorMessage = "Forkert e-mail eller adgangskode.";
     }
 
     private async Task HandleLogin()
     {
         errorMessage = string.Empty;
-        var result = await SignInManager.PasswordSignInAsync(email, password, isPersistent: true, lockoutOnFailure: false);
-        if (result.Succeeded)
-        {
-            NavigationManager.NavigateTo("/vaerktoejer", forceLoad: true);
-        }
-        else
-        {
-            errorMessage = "Forkert e-mail eller adgangskode.";
-        }
+        isBusy = true;
+        await JS.InvokeVoidAsync("submitLoginForm", email, password);
     }
 }

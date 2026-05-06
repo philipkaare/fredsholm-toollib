@@ -8,42 +8,46 @@
 
 <PageTitle>Brugerstyring - Værktøjsbibliotek</PageTitle>
 
-<div class="container mt-4">
-    <RadzenStack Gap="1rem">
-        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-            <h2>Brugerstyring</h2>
-            <RadzenButton Text="Opret bruger" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="ShowCreateDialog" />
-        </RadzenStack>
-
-        @if (!string.IsNullOrEmpty(statusMessage))
-        {
-            <RadzenAlert AlertStyle="@statusStyle">@statusMessage</RadzenAlert>
-        }
-
-        @if (users == null)
-        {
-            <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
-        }
-        else
-        {
-            <RadzenDataGrid Data="users" TItem="UserWithRoles" AllowSorting="true" PageSize="20" AllowPaging="true">
-                <Columns>
-                    <RadzenDataGridColumn TItem="UserWithRoles" Property="User.Email" Title="E-mail" />
-                    <RadzenDataGridColumn TItem="UserWithRoles" Title="Roller" Sortable="false">
-                        <Template Context="item">
-                            @string.Join(", ", item.Roles)
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="UserWithRoles" Title="Handlinger" Sortable="false">
-                        <Template Context="item">
-                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click='() => DeleteUser(item.User.Id)' />
-                        </Template>
-                    </RadzenDataGridColumn>
-                </Columns>
-            </RadzenDataGrid>
-        }
+<RadzenStack Gap="1rem" class="p-3" Style="width:100%">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Style="width:100%">
+        <h2>Brugerstyring</h2>
+        <RadzenButton Text="Opret bruger" Icon="person_add" ButtonStyle="ButtonStyle.Primary" Click="ShowCreateDialog" />
     </RadzenStack>
-</div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <RadzenAlert AlertStyle="@statusStyle">@statusMessage</RadzenAlert>
+    }
+
+    @if (users == null)
+    {
+        <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else
+    {
+        <RadzenDataGrid Data="users" TItem="UserWithRoles" AllowSorting="true" PageSize="20" AllowPaging="true" Style="width:100%">
+            <Columns>
+                <RadzenDataGridColumn TItem="UserWithRoles" Property="User.FullName" Title="Navn">
+                    <Template Context="item">@(item.User.FullName ?? "—")</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserWithRoles" Property="User.Email" Title="E-mail" />
+                <RadzenDataGridColumn TItem="UserWithRoles" Property="User.Address" Title="Adresse">
+                    <Template Context="item">@(item.User.Address ?? "—")</Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserWithRoles" Title="Roller" Sortable="false">
+                    <Template Context="item">
+                        @string.Join(", ", item.Roles)
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserWithRoles" Title="Handlinger" Sortable="false" Width="100px">
+                    <Template Context="item">
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click='() => DeleteUser(item.User.Id)' />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenStack>
 
 @code {
     private List<UserWithRoles>? users;

@@ -12,6 +12,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     }
 
     public DbSet<Tool> Tools { get; set; }
+    public DbSet<UserRequest> UserRequests { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -26,6 +27,20 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                   .WithMany(u => u.Tools)
                   .HasForeignKey(t => t.OwnerId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<UserRequest>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Email).IsRequired().HasMaxLength(256);
+            entity.Property(r => r.Name).IsRequired().HasMaxLength(200);
+            entity.Property(r => r.Message).HasMaxLength(1000);
+        });
+
+        builder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(u => u.FullName).HasMaxLength(200);
+            entity.Property(u => u.Address).HasMaxLength(500);
         });
     }
 }
