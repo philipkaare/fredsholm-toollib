@@ -14,7 +14,9 @@
       "Bash(dotnet build *)",
       "Bash(dotnet restore *)",
       "Bash(dotnet package *)",
-      "WebFetch(domain:fly.io)"
+      "WebFetch(domain:fly.io)",
+      "Bash(fly status *)",
+      "PowerShell(fly status *)"
     ]
   }
 }
