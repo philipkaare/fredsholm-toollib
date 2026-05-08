@@ -9,6 +9,9 @@ services:
       MongoDB__ConnectionString: mongodb://mongo:27017
       MongoDB__DatabaseName: toollib
       ASPNETCORE_ENVIRONMENT: Production
+      AdminUser__Email: admin@toollib.dk
+      AdminUser__Password: v3fj8bFoJZ2RhWvU7VxL!
+      APP_BASE_URL: https://fredsholm-toollib.fly.dev
     depends_on:
       - postgres
       - mongo
