@@ -1,0 +1,38 @@
+{
+  "containers": [
+    {
+      "name": "app",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "AdminUser__Email": "philip.kaare@gmail.com",
+        "App__BaseUrl": "https://fredsholmvej.dk",
+        "MailerSend__FromEmail": "noreply@fredsholmvej.dk",
+        "MailerSend__FromName": "Fredsholmvej Værktøjsbibliotek",
+        "MongoDB__ConnectionString": "mongodb://mongo:27017",
+        "MongoDB__DatabaseName": "toollib"
+      },
+      "secrets": [
+        { "env_var": "ConnectionStrings__DefaultConnection" },
+        { "env_var": "AdminUser__Password" },
+        { "env_var": "MailerSend__ApiToken" }
+      ]
+    },
+    {
+      "name": "postgres",
+      "image": "postgres:16-alpine",
+      "entrypoint": ["sh", "-c", "mkdir -p /data/postgres && chown -R postgres:postgres /data/postgres && PGDATA=/data/postgres exec docker-entrypoint.sh postgres"],
+      "env": {
+        "POSTGRES_DB": "toollib",
+        "POSTGRES_USER": "postgres"
+      },
+      "secrets": [
+        { "env_var": "POSTGRES_PASSWORD" }
+      ]
+    },
+    {
+      "name": "mongo",
+      "image": "mongo:7",
+      "entrypoint": ["sh", "-c", "mkdir -p /data/db /data/configdb && exec docker-entrypoint.sh mongod"]
+    }
+  ]
+}

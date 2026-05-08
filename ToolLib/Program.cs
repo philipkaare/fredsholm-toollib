@@ -140,21 +140,29 @@ using (var scope = app.Services.CreateScope())
         if (string.IsNullOrEmpty(adminPassword))
             throw new InvalidOperationException("ADMIN_PASSWORD must be set in .env or as an environment variable.");
         
-        if (await userManager.FindByEmailAsync(adminEmail) == null)
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
         {
-            var admin = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
-            var result = await userManager.CreateAsync(admin, adminPassword);
-            if (result.Succeeded)
-            {
-                var createdAdmin = await userManager.FindByIdAsync(admin.Id);
-                if (createdAdmin != null)
-                    await userManager.AddToRoleAsync(createdAdmin, "Admin");
-                else
-                    logger.LogError("Admin user was created but could not be retrieved for role assignment.");
-            }
-            else
+            adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
+            var result = await userManager.CreateAsync(adminUser, adminPassword);
+            if (!result.Succeeded)
             {
                 logger.LogError("Failed to create admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+                adminUser = null;
+            }
+        }
+
+        if (adminUser != null)
+        {
+            if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+
+            if (!await userManager.CheckPasswordAsync(adminUser, adminPassword))
+            {
+                var token = await userManager.GeneratePasswordResetTokenAsync(adminUser);
+                var resetResult = await userManager.ResetPasswordAsync(adminUser, token, adminPassword);
+                if (!resetResult.Succeeded)
+                    logger.LogError("Failed to sync admin password from config: {Errors}", string.Join(", ", resetResult.Errors.Select(e => e.Description)));
             }
         }
     }

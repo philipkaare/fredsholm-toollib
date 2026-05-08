@@ -34,6 +34,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(r => r.Id);
             entity.Property(r => r.Email).IsRequired().HasMaxLength(256);
             entity.Property(r => r.Name).IsRequired().HasMaxLength(200);
+            entity.Property(r => r.Address).IsRequired().HasMaxLength(500);
             entity.Property(r => r.Message).HasMaxLength(1000);
         });
 

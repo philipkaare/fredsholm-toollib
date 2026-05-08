@@ -25,7 +25,11 @@
       "Read(//tmp/**)",
       "Bash(fly ssh *)",
       "Bash(fly certs *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(dotnet ef *)",
+      "WebFetch(domain:community.fly.io)",
+      "Bash(fly secrets *)"
     ]
   }
 }

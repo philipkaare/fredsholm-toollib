@@ -29,6 +29,7 @@
             <Columns>
                 <RadzenDataGridColumn TItem="UserRequest" Property="Name" Title="Navn" />
                 <RadzenDataGridColumn TItem="UserRequest" Property="Email" Title="E-mail" />
+                <RadzenDataGridColumn TItem="UserRequest" Property="Address" Title="Adresse" />
                 <RadzenDataGridColumn TItem="UserRequest" Property="Message" Title="Besked">
                     <Template Context="r">
                         <span>@(string.IsNullOrEmpty(r.Message) ? "—" : r.Message)</span>

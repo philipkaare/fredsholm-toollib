@@ -33,8 +33,11 @@
                         <RadzenFormField Text="E-mail">
                             <RadzenTextBox @bind-Value="email" Placeholder="din@email.dk" Style="width:100%" />
                         </RadzenFormField>
+                        <RadzenFormField Text="Adresse på Fredsholmvej">
+                            <RadzenTextBox @bind-Value="address" Placeholder="Fx Fredsholmvej 12" Style="width:100%" />
+                        </RadzenFormField>
                         <RadzenFormField Text="Besked (valgfri)">
-                            <RadzenTextArea @bind-Value="message" Placeholder="Fx hvad din adresse er på Fredsholmvej..." Rows="3" Style="width:100%" />
+                            <RadzenTextArea @bind-Value="message" Placeholder="Evt. yderligere bemærkninger..." Rows="3" Style="width:100%" />
                         </RadzenFormField>
                         <RadzenButton Text="Send anmodning" ButtonStyle="ButtonStyle.Primary" Style="width:100%"
                             Click="HandleSubmit" IsBusy="isBusy" />
@@ -51,6 +54,7 @@
 @code {
     private string name = string.Empty;
     private string email = string.Empty;
+    private string address = string.Empty;
     private string message = string.Empty;
     private string errorMessage = string.Empty;
     private bool isBusy;
@@ -70,6 +74,11 @@
             errorMessage = "Angiv venligst en gyldig e-mailadresse.";
             return;
         }
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            errorMessage = "Angiv venligst din adresse på Fredsholmvej.";
+            return;
+        }
 
         isBusy = true;
         try
@@ -78,6 +87,7 @@
             {
                 Name = name.Trim(),
                 Email = email.Trim().ToLower(),
+                Address = address.Trim(),
                 Message = string.IsNullOrWhiteSpace(message) ? null : message.Trim()
             };
 

@@ -58,6 +58,7 @@ public class UserRequestService
             await _emailService.SendAsync(adminEmail,
                 "Ny adgangsanmodning - Fredsholmvej Værktøjsbibliotek",
                 $"<p><strong>{request.Name}</strong> ({request.Email}) har anmodet om adgang.</p>" +
+                $"<p>Adresse: {System.Web.HttpUtility.HtmlEncode(request.Address)}</p>" +
                 (string.IsNullOrEmpty(request.Message) ? "" : $"<p>Besked: {System.Web.HttpUtility.HtmlEncode(request.Message)}</p>") +
                 $"<p><a href='{baseUrl}/admin/adgangsanmodninger'>Se og behandl anmodningen her</a></p>");
         }
@@ -87,7 +88,8 @@ public class UserRequestService
                 UserName = request.Email,
                 Email = request.Email,
                 EmailConfirmed = true,
-                FullName = request.Name
+                FullName = request.Name,
+                Address = request.Address
             };
             var tempPw = "Temp!" + Guid.NewGuid().ToString("N")[..8] + "1";
             var result = await _userManager.CreateAsync(user, tempPw);

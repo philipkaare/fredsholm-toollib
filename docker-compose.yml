@@ -1,18 +1,20 @@
 version: '3.8'
+# Local-dev compose. Sensitive values are read from .env (gitignored).
+# Production deploys go via Fly machine_config (fly.machines.json) + fly secrets.
 services:
   app:
     build: .
     ports:
       - "8080:8080"
     environment:
-      ConnectionStrings__DefaultConnection: Host=postgres;Database=toollib;Username=postgres;Password=postgres123
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=toollib;Username=postgres;Password=${POSTGRES_PASSWORD}
       MongoDB__ConnectionString: mongodb://mongo:27017
       MongoDB__DatabaseName: toollib
       ASPNETCORE_ENVIRONMENT: Production
       AdminUser__Email: admin@toollib.dk
-      AdminUser__Password: v3fj8bFoJZ2RhWvU7VxL!
+      AdminUser__Password: ${ADMIN_PASSWORD}
       App__BaseUrl: https://fredsholmvej.dk
-      MailerSend__ApiToken: mlsn.7b5d5b4b735d41d8311255860ee87ae4969c18350c48e6e1ce60830e9f9d19a5
+      MailerSend__ApiToken: ${MAILERSEND_API_TOKEN}
       MailerSend__FromEmail: noreply@fredsholmvej.dk
       MailerSend__FromName: Fredsholmvej Værktøjsbibliotek
     depends_on:
@@ -25,7 +27,7 @@ services:
     environment:
       POSTGRES_DB: toollib
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
   mongo:
     image: mongo:7

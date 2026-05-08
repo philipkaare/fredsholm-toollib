@@ -1,7 +1,7 @@
 app = 'fredsholm-toollib'
 primary_region = 'ams'
 
-[build.compose]
+machine_config = "fly.machines.json"
 
 [http_service]
   internal_port = 8080
