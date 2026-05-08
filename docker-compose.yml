@@ -1,28 +1,17 @@
 version: '3.8'
 services:
   app:
-    build: ./ToolLib
+    build: .
     ports:
       - "8080:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=postgres;Database=toollib;Username=postgres;Password=postgres123}
-      - MongoDB__ConnectionString=${MONGODB_URL:-mongodb://mongo:27017}
-      - MongoDB__DatabaseName=toollib
-      - AdminUser__Email=${ADMIN_EMAIL:-admin@toollib.dk}
-      - AdminUser__Password=${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
-      - ASPNETCORE_ENVIRONMENT=Production
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USE_SSL=${SMTP_USE_SSL:-true}
-      - SMTP_FROM=${SMTP_FROM:-}
-      - SMTP_USERNAME=${SMTP_USERNAME:-}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8080}
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=toollib;Username=postgres;Password=postgres123
+      MongoDB__ConnectionString: mongodb://mongo:27017
+      MongoDB__DatabaseName: toollib
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
-      postgres:
-        condition: service_healthy
-      mongo:
-        condition: service_started
+      - postgres
+      - mongo
 
   postgres:
     image: postgres:16-alpine
@@ -30,19 +19,8 @@ services:
       POSTGRES_DB: toollib
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      PGDATA: /data/postgres
 
   mongo:
     image: mongo:7
-    volumes:
-      - mongo_data:/data/db
-
-volumes:
-  postgres_data:
-  mongo_data:
+    entrypoint: ["sh", "-c", "mkdir -p /data/db /data/configdb && exec docker-entrypoint.sh mongod"]
