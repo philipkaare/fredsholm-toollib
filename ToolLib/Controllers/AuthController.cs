@@ -16,8 +16,11 @@ public class AuthController : Controller
 
     [HttpPost("login")]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> Login(string email, string password, string returnUrl = "/vaerktoejer")
+    public async Task<IActionResult> Login(string? email, string? password, string returnUrl = "/vaerktoejer")
     {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            return LocalRedirect("/login?error=1");
+
         var result = await _signInManager.PasswordSignInAsync(email, password, isPersistent: true, lockoutOnFailure: false);
         if (result.Succeeded)
             return LocalRedirect(returnUrl);
