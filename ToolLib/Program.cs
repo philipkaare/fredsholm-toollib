@@ -33,8 +33,10 @@ using ToolLib.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<ApplicationDbContext>(sp =>
+    sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -67,7 +69,7 @@ builder.Services.AddRadzenComponents();
 builder.Services.AddScoped<MongoImageService>();
 builder.Services.AddScoped<ToolService>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddScoped<UserRequestService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllersWithViews();
@@ -98,7 +100,21 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.Migrate();
+
+        var migrateAttempts = 0;
+        while (true)
+        {
+            try
+            {
+                context.Database.Migrate();
+                break;
+            }
+            catch (Npgsql.NpgsqlException ex) when (migrateAttempts++ < 30)
+            {
+                logger.LogWarning("Postgres not ready (attempt {Attempt}/30): {Message}. Retrying in 2s.", migrateAttempts, ex.Message);
+                await Task.Delay(2000);
+            }
+        }
         
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();

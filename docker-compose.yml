@@ -11,18 +11,21 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       AdminUser__Email: admin@toollib.dk
       AdminUser__Password: v3fj8bFoJZ2RhWvU7VxL!
-      APP_BASE_URL: https://fredsholm-toollib.fly.dev
+      App__BaseUrl: https://fredsholmvej.dk
+      MailerSend__ApiToken: mlsn.7b5d5b4b735d41d8311255860ee87ae4969c18350c48e6e1ce60830e9f9d19a5
+      MailerSend__FromEmail: noreply@fredsholmvej.dk
+      MailerSend__FromName: Fredsholmvej Værktøjsbibliotek
     depends_on:
       - postgres
       - mongo
 
   postgres:
     image: postgres:16-alpine
+    entrypoint: ["sh", "-c", "mkdir -p /data/postgres && chown -R postgres:postgres /data/postgres && PGDATA=/data/postgres exec docker-entrypoint.sh postgres"]
     environment:
       POSTGRES_DB: toollib
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
-      PGDATA: /data/postgres
 
   mongo:
     image: mongo:7

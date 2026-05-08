@@ -7,41 +7,49 @@ namespace ToolLib.Services;
 
 public class UserRequestService
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IDbContextFactory<ApplicationDbContext> _factory;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _config;
     private readonly ILogger<UserRequestService> _logger;
 
-    public UserRequestService(ApplicationDbContext db, UserManager<ApplicationUser> userManager,
+    public UserRequestService(IDbContextFactory<ApplicationDbContext> factory, UserManager<ApplicationUser> userManager,
         IEmailService emailService, IConfiguration config, ILogger<UserRequestService> logger)
     {
-        _db = db;
+        _factory = factory;
         _userManager = userManager;
         _emailService = emailService;
         _config = config;
         _logger = logger;
     }
 
-    public Task<List<UserRequest>> GetPendingAsync() =>
-        _db.UserRequests
+    public async Task<List<UserRequest>> GetPendingAsync()
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        return await db.UserRequests
             .Where(r => r.Status == UserRequestStatus.Pending)
             .OrderBy(r => r.RequestedAt)
             .ToListAsync();
+    }
 
-    public Task<int> GetPendingCountAsync() =>
-        _db.UserRequests.CountAsync(r => r.Status == UserRequestStatus.Pending);
+    public async Task<int> GetPendingCountAsync()
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        return await db.UserRequests.CountAsync(r => r.Status == UserRequestStatus.Pending);
+    }
 
     public async Task<bool> CreateAsync(UserRequest request)
     {
-        var hasExisting = await _db.UserRequests
+        await using var db = await _factory.CreateDbContextAsync();
+
+        var hasExisting = await db.UserRequests
             .AnyAsync(r => r.Email == request.Email && r.Status != UserRequestStatus.Rejected);
         if (hasExisting) return false;
 
         if (await _userManager.FindByEmailAsync(request.Email) != null) return false;
 
-        _db.UserRequests.Add(request);
-        await _db.SaveChangesAsync();
+        db.UserRequests.Add(request);
+        await db.SaveChangesAsync();
 
         var adminEmail = _config["AdminUser:Email"] ?? "admin@toollib.dk";
         var baseUrl = _config["App:BaseUrl"] ?? "https://localhost";
@@ -63,12 +71,14 @@ public class UserRequestService
 
     public async Task ApproveAsync(int id)
     {
-        var request = await _db.UserRequests.FindAsync(id);
+        await using var db = await _factory.CreateDbContextAsync();
+
+        var request = await db.UserRequests.FindAsync(id);
         if (request == null || request.Status != UserRequestStatus.Pending) return;
 
         request.Status = UserRequestStatus.Approved;
         request.ProcessedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
         if (await _userManager.FindByEmailAsync(request.Email) == null)
         {
@@ -114,12 +124,14 @@ public class UserRequestService
 
     public async Task RejectAsync(int id)
     {
-        var request = await _db.UserRequests.FindAsync(id);
+        await using var db = await _factory.CreateDbContextAsync();
+
+        var request = await db.UserRequests.FindAsync(id);
         if (request == null || request.Status != UserRequestStatus.Pending) return;
 
         request.Status = UserRequestStatus.Rejected;
         request.ProcessedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
         try
         {

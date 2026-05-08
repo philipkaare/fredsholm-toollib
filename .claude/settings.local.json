@@ -16,7 +16,16 @@
       "Bash(dotnet package *)",
       "WebFetch(domain:fly.io)",
       "Bash(fly status *)",
-      "PowerShell(fly status *)"
+      "PowerShell(fly status *)",
+      "Bash(fly deploy *)",
+      "Bash(fly logs *)",
+      "Bash(findstr /C:\"Now listening\" /C:\"crit\" /C:\"Application started\" /C:\"Hosting environment\" /C:\"Unhandled exception\")",
+      "Bash(curl *)",
+      "Bash(findstr /C:\"Migrate\" /C:\"migrat\" /C:\"Initial\" /C:\"AddUser\" /C:\"seeding\" /C:\"Applying\")",
+      "Read(//tmp/**)",
+      "Bash(fly ssh *)",
+      "Bash(fly certs *)",
+      "Bash(git add *)"
     ]
   }
 }

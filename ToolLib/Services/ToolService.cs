@@ -6,48 +6,54 @@ namespace ToolLib.Services;
 
 public class ToolService
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IDbContextFactory<ApplicationDbContext> _factory;
 
-    public ToolService(ApplicationDbContext context)
+    public ToolService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        _context = context;
+        _factory = factory;
     }
 
     public async Task<List<Tool>> GetAllToolsAsync()
     {
-        return await _context.Tools.Include(t => t.Owner).OrderByDescending(t => t.CreatedAt).ToListAsync();
+        await using var ctx = await _factory.CreateDbContextAsync();
+        return await ctx.Tools.Include(t => t.Owner).OrderByDescending(t => t.CreatedAt).ToListAsync();
     }
 
     public async Task<List<Tool>> GetToolsByOwnerAsync(string ownerId)
     {
-        return await _context.Tools.Include(t => t.Owner).Where(t => t.OwnerId == ownerId).OrderByDescending(t => t.CreatedAt).ToListAsync();
+        await using var ctx = await _factory.CreateDbContextAsync();
+        return await ctx.Tools.Include(t => t.Owner).Where(t => t.OwnerId == ownerId).OrderByDescending(t => t.CreatedAt).ToListAsync();
     }
 
     public async Task<Tool?> GetToolByIdAsync(int id)
     {
-        return await _context.Tools.Include(t => t.Owner).FirstOrDefaultAsync(t => t.Id == id);
+        await using var ctx = await _factory.CreateDbContextAsync();
+        return await ctx.Tools.Include(t => t.Owner).FirstOrDefaultAsync(t => t.Id == id);
     }
 
     public async Task<Tool> CreateToolAsync(Tool tool)
     {
-        _context.Tools.Add(tool);
-        await _context.SaveChangesAsync();
+        await using var ctx = await _factory.CreateDbContextAsync();
+        ctx.Tools.Add(tool);
+        await ctx.SaveChangesAsync();
         return tool;
     }
 
     public async Task UpdateToolAsync(Tool tool)
     {
-        _context.Tools.Update(tool);
-        await _context.SaveChangesAsync();
+        await using var ctx = await _factory.CreateDbContextAsync();
+        ctx.Tools.Update(tool);
+        await ctx.SaveChangesAsync();
     }
 
     public async Task DeleteToolAsync(int id)
     {
-        var tool = await _context.Tools.FindAsync(id);
+        await using var ctx = await _factory.CreateDbContextAsync();
+        var tool = await ctx.Tools.FindAsync(id);
         if (tool != null)
         {
-            _context.Tools.Remove(tool);
-            await _context.SaveChangesAsync();
+            ctx.Tools.Remove(tool);
+            await ctx.SaveChangesAsync();
         }
     }
 }
