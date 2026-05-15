@@ -13,6 +13,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Tool> Tools { get; set; }
     public DbSet<UserRequest> UserRequests { get; set; }
+    public DbSet<EmailRateLimit> EmailRateLimits { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -42,6 +43,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(u => u.FullName).HasMaxLength(200);
             entity.Property(u => u.Address).HasMaxLength(500);
+        });
+
+        builder.Entity<EmailRateLimit>(entity =>
+        {
+            entity.HasKey(e => e.Date);
         });
     }
 }
