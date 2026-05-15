@@ -35,15 +35,29 @@
                 </RadzenStack>
             </RadzenCard>
         </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <RadzenCard style="height:100%">
+                <RadzenStack Gap="0.5rem" AlignItems="AlignItems.Center">
+                    <RadzenIcon Icon="mail" Style="@($"font-size:3rem;color:{(todayEmailCount >= 20 ? "var(--rz-danger)" : todayEmailCount >= 15 ? "var(--rz-warning)" : "var(--rz-primary)")}")" />
+                    <RadzenText TextStyle="TextStyle.H5">E-mail kvote</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2">@todayEmailCount / 20 sendt i dag</RadzenText>
+                    <RadzenProgressBar Value="@todayEmailCount" Max="20" Style="width:100%" ShowValue="false"
+                        ProgressBarStyle="@(todayEmailCount >= 20 ? ProgressBarStyle.Danger : todayEmailCount >= 15 ? ProgressBarStyle.Warning : ProgressBarStyle.Primary)" />
+                </RadzenStack>
+            </RadzenCard>
+        </div>
     </div>
 </div>
 
 @code {
     private int pendingCount;
+    private int todayEmailCount;
 
     protected override async Task OnInitializedAsync()
     {
         try { pendingCount = await UserRequestService.GetPendingCountAsync(); }
+        catch { /* ignore */ }
+        try { todayEmailCount = await UserRequestService.GetTodayEmailCountAsync(); }
         catch { /* ignore */ }
     }
 }

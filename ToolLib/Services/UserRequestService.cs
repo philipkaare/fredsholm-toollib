@@ -38,6 +38,13 @@ public class UserRequestService
         return await db.UserRequests.CountAsync(r => r.Status == UserRequestStatus.Pending);
     }
 
+    public async Task<int> GetTodayEmailCountAsync()
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        await using var db = await _factory.CreateDbContextAsync();
+        return (await db.EmailRateLimits.FindAsync(today))?.Count ?? 0;
+    }
+
     public async Task<bool> CreateAsync(UserRequest request)
     {
         await using var db = await _factory.CreateDbContextAsync();
